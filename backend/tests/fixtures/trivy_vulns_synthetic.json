@@ -1,0 +1,104 @@
+{
+ "SchemaVersion": 2,
+ "ArtifactName": ".",
+ "ArtifactType": "filesystem",
+ "Trivy": {
+  "Version": "0.76.1"
+ },
+ "Results": [
+  {
+   "Target": "requirements.txt",
+   "Class": "lang-pkgs",
+   "Type": "pip",
+   "Vulnerabilities": [
+    {
+     "VulnerabilityID": "CVE-2099-0001",
+     "PkgName": "pyyaml",
+     "InstalledVersion": "5.3",
+     "FixedVersion": "5.4",
+     "Status": "fixed",
+     "Severity": "CRITICAL",
+     "Title": "Arbitrary code execution in pyyaml (synthetic fixture)",
+     "Description": "Synthetic description used only for parser/policy tests; not real advisory text.",
+     "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2099-0001",
+     "References": [
+      "https://avd.aquasec.com/nvd/cve-2099-0001"
+     ],
+     "CweIDs": [
+      "CWE-20"
+     ],
+     "CVSS": {
+      "nvd": {
+       "V3Score": 9.8
+      }
+     }
+    },
+    {
+     "VulnerabilityID": "CVE-2099-0002",
+     "PkgName": "django",
+     "InstalledVersion": "2.2.0",
+     "FixedVersion": "2.2.28",
+     "Status": "fixed",
+     "Severity": "HIGH",
+     "Title": "Injection flaw in django (synthetic fixture)",
+     "Description": "Synthetic description used only for parser/policy tests; not real advisory text.",
+     "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2099-0002",
+     "References": [
+      "https://avd.aquasec.com/nvd/cve-2099-0002"
+     ],
+     "CweIDs": [
+      "CWE-20"
+     ],
+     "CVSS": {
+      "nvd": {
+       "V3Score": 7.5
+      }
+     }
+    },
+    {
+     "VulnerabilityID": "CVE-2099-0003",
+     "PkgName": "flask",
+     "InstalledVersion": "0.12",
+     "FixedVersion": "1.0",
+     "Status": "fixed",
+     "Severity": "MEDIUM",
+     "Title": "Denial of service in flask (synthetic fixture)",
+     "Description": "Synthetic description used only for parser/policy tests; not real advisory text.",
+     "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2099-0003",
+     "References": [
+      "https://avd.aquasec.com/nvd/cve-2099-0003"
+     ],
+     "CweIDs": [
+      "CWE-20"
+     ],
+     "CVSS": {
+      "nvd": {
+       "V3Score": 7.5
+      }
+     }
+    },
+    {
+     "VulnerabilityID": "CVE-2099-0004",
+     "PkgName": "flask",
+     "InstalledVersion": "0.12",
+     "Status": "affected",
+     "Severity": "LOW",
+     "Title": "Information disclosure in flask (synthetic fixture)",
+     "Description": "Synthetic description used only for parser/policy tests; not real advisory text.",
+     "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2099-0004",
+     "References": [
+      "https://avd.aquasec.com/nvd/cve-2099-0004"
+     ],
+     "CweIDs": [
+      "CWE-20"
+     ],
+     "CVSS": {
+      "nvd": {
+       "V3Score": 7.5
+      }
+     }
+    }
+   ]
+  }
+ ]
+}

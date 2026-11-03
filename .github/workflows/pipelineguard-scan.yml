@@ -1,0 +1,31 @@
+# PipelineGuard scanning its own repository (dogfooding). Skipped until the two secrets exist.
+name: PipelineGuard self-scan
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  security-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      PIPELINEGUARD_URL: ${{ secrets.PIPELINEGUARD_URL }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: ${{ env.PIPELINEGUARD_URL != '' }}
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/pipelineguard
+        if: ${{ env.PIPELINEGUARD_URL != '' }}
+        with:
+          url: ${{ secrets.PIPELINEGUARD_URL }}
+          token: ${{ secrets.PIPELINEGUARD_TOKEN }}
+          # tests-data/ is a deliberately vulnerable sample used to exercise the scanners.
+          exclude: |
+            tests-data
+            frontend/node_modules

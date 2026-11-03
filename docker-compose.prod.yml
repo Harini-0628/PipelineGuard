@@ -1,0 +1,28 @@
+# Production overlay: adds a Caddy reverse proxy with automatic HTTPS (Let's Encrypt).
+# Requires DNS A/AAAA for ${PIPELINEGUARD_DOMAIN} pointing at this host and ports 80/443 reachable.
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on: [web]
+    environment:
+      PIPELINEGUARD_DOMAIN: ${PIPELINEGUARD_DOMAIN:?set PIPELINEGUARD_DOMAIN in .env}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in .env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [internal]
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
+    security_opt: ["no-new-privileges:true"]
+  backend:
+    environment:
+      PG_PUBLIC_BASE_URL: https://${PIPELINEGUARD_DOMAIN}
+
+volumes:
+  caddy_data: {}
+  caddy_config: {}

@@ -1,0 +1,9 @@
+{
+  "scan_id": "e16d960c-4baf-457f-afb3-a60d87018100",
+  "status": "completed",
+  "decision": "FAIL",
+  "summary": "FAIL: PG-003 High findings; PG-006 Medium findings (environment: production, policy: default v1)",
+  "idempotent_replay": false,
+  "report_url": "http://127.0.0.1:8000/scans/e16d960c-4baf-457f-afb3-a60d87018100",
+  "exit_code": 1
+}

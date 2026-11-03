@@ -1,0 +1,56 @@
+# Self-contained Semgrep ruleset shipped with PipelineGuard so scans work offline.
+# Replace or extend with --config p/ci or your own registry rulesets when network access is available.
+rules:
+  - id: pg.python.subprocess-shell-true
+    languages: [python]
+    severity: ERROR
+    message: subprocess call with shell=True can lead to OS command injection. Pass an argument list and omit shell=True.
+    pattern: subprocess.$FUNC(..., shell=True, ...)
+    metadata:
+      cwe: ["CWE-78: Improper Neutralization of Special Elements used in an OS Command"]
+      confidence: HIGH
+      references: ["https://owasp.org/www-community/attacks/Command_Injection"]
+  - id: pg.python.eval-usage
+    languages: [python]
+    severity: ERROR
+    message: eval() on dynamic input allows arbitrary code execution. Use ast.literal_eval or a safe parser.
+    pattern: eval(...)
+    metadata:
+      cwe: ["CWE-95: Eval Injection"]
+      confidence: MEDIUM
+  - id: pg.python.yaml-unsafe-load
+    languages: [python]
+    severity: WARNING
+    message: yaml.load without a safe Loader can construct arbitrary objects. Use yaml.safe_load.
+    pattern: yaml.load($X)
+    metadata:
+      cwe: ["CWE-502: Deserialization of Untrusted Data"]
+      confidence: HIGH
+  - id: pg.python.weak-hash-md5
+    languages: [python]
+    severity: WARNING
+    message: MD5 is cryptographically broken. Use SHA-256 or stronger (or a password hashing function for credentials).
+    pattern: hashlib.md5(...)
+    metadata:
+      cwe: ["CWE-327: Use of a Broken or Risky Cryptographic Algorithm"]
+      confidence: MEDIUM
+  - id: pg.python.sql-string-format
+    languages: [python]
+    severity: ERROR
+    message: SQL built with string formatting is injectable. Use parameterized queries.
+    patterns:
+      - pattern-either:
+          - pattern: $CUR.execute("..." % ..., ...)
+          - pattern: $CUR.execute("..." + ..., ...)
+          - pattern: $CUR.execute(f"...", ...)
+    metadata:
+      cwe: ["CWE-89: SQL Injection"]
+      confidence: HIGH
+  - id: pg.js.eval-usage
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: eval() executes arbitrary strings as code.
+    pattern: eval(...)
+    metadata:
+      cwe: ["CWE-95: Eval Injection"]
+      confidence: MEDIUM

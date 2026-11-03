@@ -1,0 +1,25 @@
+# DOCUMENTED EXAMPLE - not live-tested against a GitLab instance (the ingest API and CLI are CI-agnostic and the
+# CLI reads GitLab's predefined CI_* variables, but this pipeline file itself has not been run).
+# Set CI/CD variables PIPELINEGUARD_URL and PIPELINEGUARD_TOKEN (masked + protected).
+stages: [security]
+
+pipelineguard:
+  stage: security
+  image: python:3.12-slim
+  variables:
+    SEMGREP_VERSION: "1.182.1"
+    TRIVY_VERSION: "0.76.1"
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq curl git ca-certificates >/dev/null
+    - pip install --no-cache-dir "semgrep==${SEMGREP_VERSION}"
+    - curl -sSL "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz" | tar -xz -C /usr/local/bin trivy
+    - git clone --depth 1 https://github.com/<OWNER>/<REPO>.git /opt/pipelineguard   # pin to a reviewed commit
+  script:
+    - python /opt/pipelineguard/cli/pipelineguard.py scan --path . --output-dir pipelineguard-output
+  artifacts:
+    when: always
+    paths: [pipelineguard-output/]
+    expire_in: 30 days
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH

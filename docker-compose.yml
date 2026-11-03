@@ -1,0 +1,70 @@
+# Local / single-host stack. Quick start:  cp .env.example .env  (edit secrets)  &&  docker compose up -d --build
+# Add the production overlay for HTTPS:   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+name: pipelineguard
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pipelineguard
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: pipelineguard
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks: [internal]            # not published to the host
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pipelineguard -d pipelineguard"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    security_opt: ["no-new-privileges:true"]
+    deploy:
+      resources:
+        limits: { memory: 1g }
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      PG_ENVIRONMENT: production
+      PG_DATABASE_URL: postgresql+psycopg://pipelineguard:${POSTGRES_PASSWORD}@db:5432/pipelineguard
+      PG_JWT_SECRET: ${PG_JWT_SECRET:?set PG_JWT_SECRET in .env (>= 32 random chars)}
+      PG_PUBLIC_BASE_URL: ${PG_PUBLIC_BASE_URL:-http://localhost:8080}
+      PG_CORS_ORIGINS: ${PG_CORS_ORIGINS:-}
+      PG_BOOTSTRAP_ADMIN_EMAIL: ${PG_BOOTSTRAP_ADMIN_EMAIL:-}
+      PG_BOOTSTRAP_ADMIN_PASSWORD: ${PG_BOOTSTRAP_ADMIN_PASSWORD:-}
+      PG_FORWARDED_ALLOW_IPS: "*"   # only the internal web/caddy container can reach this service
+    networks: [internal]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    deploy:
+      resources:
+        limits: { memory: 1g, cpus: "2.0" }
+
+  web:
+    build:
+      context: frontend
+    restart: unless-stopped
+    depends_on:
+      backend: { condition: service_healthy }
+    ports:
+      - "127.0.0.1:8080:8080"        # loopback only; Caddy (prod overlay) is the public entrypoint
+    networks: [internal]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    deploy:
+      resources:
+        limits: { memory: 256m }
+
+networks:
+  internal: {}
+
+volumes:
+  pgdata: {}

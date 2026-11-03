@@ -1,0 +1,34 @@
+# PipelineGuard default policy (schema_version 1).
+# Safe by default: unknown branches are treated as production, missing mandatory scans fail the build.
+schema_version: 1
+description: Default PipelineGuard security gate
+default_environment: production
+# First matching pattern wins (fnmatch). For pull requests the TARGET (base) branch decides the environment.
+branch_environments:
+  - { pattern: "main",      environment: production }
+  - { pattern: "master",    environment: production }
+  - { pattern: "release/*", environment: staging }
+  - { pattern: "staging",   environment: staging }
+  - { pattern: "*",         environment: development }
+environments:
+  production:
+    mandatory_scanners: [semgrep, trivy]
+    max_critical: 0
+    max_high: 0
+    warn_medium_above: 0
+    fail_on_known_exploited: true
+    fail_on_secrets: true
+  staging:
+    mandatory_scanners: [semgrep, trivy]
+    max_critical: 0
+    max_high: 3
+    warn_medium_above: 10
+    fail_on_known_exploited: true
+    fail_on_secrets: true
+  development:
+    mandatory_scanners: [semgrep, trivy]
+    max_critical: 0
+    max_high: 10
+    warn_medium_above: 25
+    fail_on_known_exploited: true
+    fail_on_secrets: true

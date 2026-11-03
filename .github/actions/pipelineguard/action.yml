@@ -1,0 +1,79 @@
+name: PipelineGuard security gate
+description: Run Semgrep + Trivy, send the reports to PipelineGuard, and fail the job when the policy decision is FAIL.
+inputs:
+  url:
+    description: Base URL of your PipelineGuard server (https).
+    required: true
+  token:
+    description: Repository ingest token (store as an Actions secret).
+    required: true
+  path:
+    description: Directory to scan.
+    default: "."
+  semgrep-config:
+    description: Semgrep config. Defaults to scanner-config/semgrep-rules.yml when present, otherwise p/ci.
+    default: ""
+  trivy-scanners:
+    description: Trivy scanners (comma separated).
+    default: "vuln,misconfig,secret"
+  trivy-image:
+    description: Optional container image reference to scan too.
+    default: ""
+  exclude:
+    description: Newline-separated paths/globs to exclude.
+    default: ""
+  warn-as-failure:
+    description: Treat WARN as a failure ("true"/"false").
+    default: "false"
+  pr-comment:
+    description: Post/update a pull-request comment ("true"/"false"). Needs `pull-requests - write`.
+    default: "true"
+  semgrep-version:
+    description: Pinned Semgrep version.
+    default: "1.182.1"
+  trivy-version:
+    description: Pinned Trivy version.
+    default: "v0.76.1"
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+      with:
+        python-version: "3.12"
+    - uses: aquasecurity/setup-trivy@81e514348e19b6112ce2a7e3ecbafe19c1e1f567 # v0.3.1
+      with:
+        version: ${{ inputs.trivy-version }}
+    - name: Install Semgrep
+      shell: bash
+      run: python -m pip install --disable-pip-version-check "semgrep==${SEMGREP_VERSION}"
+      env:
+        SEMGREP_VERSION: ${{ inputs.semgrep-version }}
+    - name: Run PipelineGuard
+      shell: bash
+      env:
+        PIPELINEGUARD_URL: ${{ inputs.url }}
+        PIPELINEGUARD_TOKEN: ${{ inputs.token }}
+        GITHUB_TOKEN: ${{ github.token }}
+        PG_PATH: ${{ inputs.path }}
+        PG_SEMGREP_CONFIG: ${{ inputs.semgrep-config }}
+        PG_TRIVY_SCANNERS: ${{ inputs.trivy-scanners }}
+        PG_TRIVY_IMAGE: ${{ inputs.trivy-image }}
+        PG_EXCLUDE: ${{ inputs.exclude }}
+        PG_WARN_AS_FAILURE: ${{ inputs.warn-as-failure }}
+        PG_PR_COMMENT: ${{ inputs.pr-comment }}
+      run: |
+        # Inputs reach the shell only through environment variables (no ${{ }} interpolation into the script).
+        args=(scan --path "$PG_PATH" --trivy-scanners "$PG_TRIVY_SCANNERS" --output-dir pipelineguard-output)
+        [ -n "$PG_SEMGREP_CONFIG" ] && args+=(--semgrep-config "$PG_SEMGREP_CONFIG")
+        [ -n "$PG_TRIVY_IMAGE" ] && args+=(--trivy-image "$PG_TRIVY_IMAGE")
+        [ "$PG_WARN_AS_FAILURE" = "true" ] && args+=(--warn-as-failure)
+        [ "$PG_PR_COMMENT" = "true" ] && args+=(--pr-comment)
+        while IFS= read -r line; do [ -n "$line" ] && args+=(--exclude "$line"); done <<< "$PG_EXCLUDE"
+        python "${GITHUB_ACTION_PATH}/../../../cli/pipelineguard.py" "${args[@]}"
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      if: always()
+      with:
+        name: pipelineguard-reports
+        path: pipelineguard-output/
+        if-no-files-found: warn
+        retention-days: 30

@@ -1,0 +1,26 @@
+# Copy to .github/workflows/pipelineguard.yml in the repository you want to protect.
+# 1) Register the repo in PipelineGuard, 2) add secrets PIPELINEGUARD_URL and PIPELINEGUARD_TOKEN.
+# Replace <OWNER>/<REPO>@<COMMIT_SHA> with the PipelineGuard repository and a commit you have reviewed.
+name: PipelineGuard
+on:
+  push:
+    branches: [main, "release/**"]
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write   # only needed for the PR comment; remove it and set pr-comment: "false" to drop it
+
+jobs:
+  security-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: <OWNER>/<REPO>/.github/actions/pipelineguard@<COMMIT_SHA>
+        with:
+          url: ${{ secrets.PIPELINEGUARD_URL }}
+          token: ${{ secrets.PIPELINEGUARD_TOKEN }}
+          warn-as-failure: "false"
